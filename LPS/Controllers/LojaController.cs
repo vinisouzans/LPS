@@ -2,6 +2,7 @@
 using LPS.Data;
 using LPS.DTOs.Loja;
 using LPS.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -41,6 +42,7 @@ namespace LPS.Controllers
         }
 
         // POST api/loja
+        [Authorize(Roles = "Administrador")]
         [HttpPost]
         public async Task<ActionResult<LojaReadDTO>> CreateLoja(LojaCreateDTO dto)
         {

@@ -2,6 +2,7 @@
 using LPS.Data;
 using LPS.DTOs.Usuario;
 using LPS.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -45,7 +46,8 @@ namespace LPS.Controllers
             return Ok(_mapper.Map<UsuarioReadDTO>(usuario));
         }
 
-        // POST api/usuario        
+        // POST api/usuario
+        //[Authorize(Roles = "Administrador")]
         [HttpPost]
         public async Task<ActionResult<UsuarioReadDTO>> CreateUsuario(UsuarioCreateDTO dto)
         {
@@ -63,30 +65,8 @@ namespace LPS.Controllers
             return CreatedAtAction(nameof(GetUsuario), new { id = usuarioRead.Id }, usuarioRead);
         }
 
-        // PUT api/usuario/id
-        //[HttpPut("{id}")]
-        //public async Task<IActionResult> UpdateUsuario(int id, UsuarioUpdateDTO dto)
-        //{
-        //    var usuario = await _context.Usuarios.FindAsync(id);
-
-        //    if (usuario == null)
-        //        return NotFound();
-
-        //    // Atualiza os outros campos
-        //    _mapper.Map(dto, usuario);
-
-        //    // Se a senha foi enviada e não está vazia, faz o hash
-        //    if (!string.IsNullOrWhiteSpace(dto.Senha))
-        //    {
-        //        usuario.SenhaHash = BCrypt.Net.BCrypt.HashPassword(dto.Senha);
-        //    }
-
-        //    await _context.SaveChangesAsync();
-
-        //    return NoContent();
-        //}
-
         // PUT api/usuario/5
+        [Authorize(Roles = "Administrador")]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateUsuario(int id, UsuarioUpdateDTO dto)
         {
@@ -112,6 +92,7 @@ namespace LPS.Controllers
 
 
         // DELETE api/usuario/5
+        [Authorize(Roles = "Administrador")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUsuario(int id)
         {
