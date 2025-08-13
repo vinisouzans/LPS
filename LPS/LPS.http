@@ -1,0 +1,6 @@
+@LPS_HostAddress = http://localhost:5248
+
+GET {{LPS_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
