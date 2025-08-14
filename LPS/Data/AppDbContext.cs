@@ -11,6 +11,10 @@ namespace LPS.Data
 
         public DbSet<Usuario> Usuarios { get; set; }
         public DbSet<Loja> Lojas { get; set; }
+        public DbSet<Produto> Produtos { get; set; }
+        public DbSet<Estoque> Estoques { get; set; }
+        public DbSet<Fornecedor> Fornecedores { get; set; }
+        public DbSet<Venda> Vendas { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
