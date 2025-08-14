@@ -4,6 +4,7 @@ using LPS.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LPS.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250814121516_AddFornecedordToProduto")]
+    partial class AddFornecedordToProduto
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -36,9 +39,6 @@ namespace LPS.Migrations
                     b.Property<DateTime?>("DataValidade")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("EstoqueId")
-                        .HasColumnType("int");
-
                     b.Property<int>("FornecedorId")
                         .HasColumnType("int");
 
@@ -53,14 +53,12 @@ namespace LPS.Migrations
                         .HasColumnType("int");
 
                     b.Property<decimal>("QuantidadeDisponivel")
-                        .HasColumnType("decimal(18,3)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("QuantidadeTotal")
-                        .HasColumnType("decimal(18,3)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("EstoqueId");
 
                     b.HasIndex("FornecedorId");
 
@@ -200,7 +198,7 @@ namespace LPS.Migrations
                         .HasColumnType("int");
 
                     b.Property<decimal>("Quantidade")
-                        .HasColumnType("decimal(18,3)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
 
@@ -213,20 +211,16 @@ namespace LPS.Migrations
 
             modelBuilder.Entity("LPS.Models.Estoque", b =>
                 {
-                    b.HasOne("LPS.Models.Estoque", null)
-                        .WithMany("Estoques")
-                        .HasForeignKey("EstoqueId");
-
                     b.HasOne("LPS.Models.Fornecedor", "Fornecedor")
                         .WithMany("Estoques")
                         .HasForeignKey("FornecedorId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("LPS.Models.Produto", "Produto")
                         .WithMany("Estoques")
                         .HasForeignKey("ProdutoId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Fornecedor");
@@ -237,9 +231,9 @@ namespace LPS.Migrations
             modelBuilder.Entity("LPS.Models.Produto", b =>
                 {
                     b.HasOne("LPS.Models.Fornecedor", "Fornecedor")
-                        .WithMany("Produtos")
+                        .WithMany()
                         .HasForeignKey("FornecedorId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Fornecedor");
@@ -275,16 +269,12 @@ namespace LPS.Migrations
 
             modelBuilder.Entity("LPS.Models.Estoque", b =>
                 {
-                    b.Navigation("Estoques");
-
                     b.Navigation("Vendas");
                 });
 
             modelBuilder.Entity("LPS.Models.Fornecedor", b =>
                 {
                     b.Navigation("Estoques");
-
-                    b.Navigation("Produtos");
                 });
 
             modelBuilder.Entity("LPS.Models.Loja", b =>
