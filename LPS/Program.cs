@@ -1,4 +1,5 @@
 using LPS.Data;
+using LPS.Services;
 using LPS.Settings;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -48,6 +49,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // AutoMapper (como você já configurou)
 builder.Services.AddAutoMapper(typeof(Program).Assembly);
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
+builder.Services.AddScoped<VendaService>();
 
 // Auth: JWT
 var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>();
