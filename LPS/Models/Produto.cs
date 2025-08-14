@@ -12,9 +12,9 @@
         public int FornecedorId { get; set; }
 
         // Propriedade de navegação
-        public Fornecedor Fornecedor { get; set; }
+        public Fornecedor Fornecedor { get; set; }        
 
         // Relacionamento com Estoques
-        public ICollection<Estoque>? Estoques { get; set; }
+        public ICollection<Estoque>? Estoques { get; set; }        
     }
 }

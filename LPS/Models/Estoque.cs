@@ -16,6 +16,8 @@
         public DateTime DataCompra { get; set; }
         public DateTime? DataValidade { get; set; }
 
+        public ICollection<Estoque> Estoques { get; set; }
+
         public ICollection<Venda>? Vendas { get; set; }
     }
 }
