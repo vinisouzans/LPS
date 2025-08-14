@@ -15,6 +15,8 @@ namespace LPS.Data
 
         public DbSet<Estoque> Estoques { get; set; }
 
+        public DbSet<Venda> Vendas { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -38,6 +40,20 @@ namespace LPS.Data
                 .HasOne(e => e.Fornecedor)
                 .WithMany()
                 .HasForeignKey(e => e.FornecedorId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Venda → Produto
+            modelBuilder.Entity<Venda>()
+                .HasOne(v => v.Produto)
+                .WithMany()
+                .HasForeignKey(v => v.ProdutoId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Venda → Estoque
+            modelBuilder.Entity<Venda>()
+                .HasOne(v => v.Estoque)
+                .WithMany()
+                .HasForeignKey(v => v.EstoqueId)
                 .OnDelete(DeleteBehavior.Restrict);
         }
 
