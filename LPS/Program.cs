@@ -47,6 +47,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 // AutoMapper (como você já configurou)
 builder.Services.AddAutoMapper(typeof(Program).Assembly);
+builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 // Auth: JWT
 var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>();
