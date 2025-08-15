@@ -55,6 +55,14 @@ namespace LPS.Data
                 .WithMany()
                 .HasForeignKey(v => v.EstoqueId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Usuario>()
+                .HasIndex(u => u.UserName)
+                .IsUnique();
+
+            modelBuilder.Entity<Usuario>()
+                .HasIndex(u => u.CPF)
+                .IsUnique();
         }
 
 
