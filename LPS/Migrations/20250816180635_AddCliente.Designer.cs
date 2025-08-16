@@ -4,6 +4,7 @@ using LPS.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LPS.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250816180635_AddCliente")]
+    partial class AddCliente
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -48,33 +51,6 @@ namespace LPS.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Clientes");
-                });
-
-            modelBuilder.Entity("LPS.Models.Desconto", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("DataFim")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("DataInicio")
-                        .HasColumnType("datetime2");
-
-                    b.Property<decimal>("Percentual")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int?>("ProdutoId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ProdutoId");
-
-                    b.ToTable("Descontos");
                 });
 
             modelBuilder.Entity("LPS.Models.Estoque", b =>
@@ -275,9 +251,6 @@ namespace LPS.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int?>("ClienteId")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("DataVenda")
                         .HasColumnType("datetime2");
 
@@ -298,22 +271,11 @@ namespace LPS.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ClienteId");
-
                     b.HasIndex("EstoqueId");
 
                     b.HasIndex("ProdutoId");
 
                     b.ToTable("Vendas");
-                });
-
-            modelBuilder.Entity("LPS.Models.Desconto", b =>
-                {
-                    b.HasOne("LPS.Models.Produto", "Produto")
-                        .WithMany()
-                        .HasForeignKey("ProdutoId");
-
-                    b.Navigation("Produto");
                 });
 
             modelBuilder.Entity("LPS.Models.Estoque", b =>
@@ -359,10 +321,6 @@ namespace LPS.Migrations
 
             modelBuilder.Entity("LPS.Models.Venda", b =>
                 {
-                    b.HasOne("LPS.Models.Cliente", "Cliente")
-                        .WithMany()
-                        .HasForeignKey("ClienteId");
-
                     b.HasOne("LPS.Models.Estoque", "Estoque")
                         .WithMany()
                         .HasForeignKey("EstoqueId")
@@ -374,8 +332,6 @@ namespace LPS.Migrations
                         .HasForeignKey("ProdutoId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-
-                    b.Navigation("Cliente");
 
                     b.Navigation("Estoque");
 

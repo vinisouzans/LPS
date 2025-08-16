@@ -17,6 +17,12 @@ namespace LPS.Data
 
         public DbSet<Venda> Vendas { get; set; }
 
+        public DbSet<Cliente> Clientes { get; set; }
+
+        public DbSet<Desconto> Descontos { get; set; }
+
+
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

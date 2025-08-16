@@ -18,5 +18,9 @@ namespace LPS.Models
         // Relacionamento com Estoque
         public int EstoqueId { get; set; }
         public Estoque Estoque { get; set; } = null!;
+
+        // 🔗 Relação com Cliente
+        public int? ClienteId { get; set; }
+        public Cliente? Cliente { get; set; }
     }
 }

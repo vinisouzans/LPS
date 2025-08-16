@@ -51,6 +51,10 @@ builder.Services.AddAutoMapper(typeof(Program).Assembly);
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 builder.Services.AddScoped<VendaService>();
+builder.Services.AddScoped<DashboardVendasService>();
+builder.Services.AddScoped<ClienteService>();
+builder.Services.AddScoped<DescontoService>();
+
 
 // Auth: JWT
 var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>();

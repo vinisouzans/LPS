@@ -68,5 +68,28 @@ namespace LPS.Controllers
                 return BadRequest(new { message = ex.Message });
             }
         }
+
+        [HttpGet("cliente/{clienteId}")]
+        public async Task<IActionResult> GetVendasPorClienteId(int clienteId)
+        {
+            var vendas = await _vendaService.ObterVendasPorClienteIdAsync(clienteId);
+
+            if (!vendas.Any())
+                return NotFound($"Nenhuma venda encontrada para o cliente com ID {clienteId}.");
+
+            return Ok(vendas);
+        }
+
+        [HttpGet("cliente/cpf/{cpf}")]
+        public async Task<IActionResult> GetVendasPorClienteCpf(string cpf)
+        {
+            var vendas = await _vendaService.ObterVendasPorClienteCpfAsync(cpf);
+
+            if (!vendas.Any())
+                return NotFound($"Nenhuma venda encontrada para o cliente com CPF {cpf}.");
+
+            return Ok(vendas);
+        }
+
     }
 }

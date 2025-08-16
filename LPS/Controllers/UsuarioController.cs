@@ -47,40 +47,7 @@ namespace LPS.Controllers
         }
 
         // POST api/usuario
-        //[Authorize(Roles = "Administrador")]
-        //[HttpPost]
-        //public async Task<ActionResult<UsuarioReadDTO>> CreateUsuario(UsuarioCreateDTO dto)
-        //{
-        //    // Verifica campos obrigatórios
-        //    if (string.IsNullOrWhiteSpace(dto.UserName) ||
-        //        string.IsNullOrWhiteSpace(dto.PrimeiroNome) ||
-        //        string.IsNullOrWhiteSpace(dto.Sobrenome) ||
-        //        string.IsNullOrWhiteSpace(dto.CPF))
-        //    {
-        //        return BadRequest("UserName, PrimeiroNome, Sobrenome e CPF são obrigatórios.");
-        //    }
-
-        //    var lojaExiste = await _context.Lojas.AnyAsync(l => l.Id == dto.LojaId);
-        //    if (!lojaExiste)
-        //        return BadRequest($"A loja com ID {dto.LojaId} não existe.");
-
-        //    var usuario = _mapper.Map<Usuario>(dto);
-
-        //    // Hash da senha, caso informada
-        //    if (!string.IsNullOrWhiteSpace(dto.Senha))
-        //        usuario.SenhaHash = BCrypt.Net.BCrypt.HashPassword(dto.Senha);
-
-        //    usuario.DataCriacao = DateTime.UtcNow;
-        //    usuario.Ativo = dto.Ativo; // já vem true por padrão no DTO
-
-        //    _context.Usuarios.Add(usuario);
-        //    await _context.SaveChangesAsync();
-
-        //    var usuarioRead = _mapper.Map<UsuarioReadDTO>(usuario);
-        //    return CreatedAtAction(nameof(GetUsuario), new { id = usuarioRead.Id }, usuarioRead);
-        //}
-
-        // POST api/usuario
+        [Authorize(Roles = "Administrador")]
         [HttpPost]
         public async Task<ActionResult<UsuarioReadDTO>> CreateUsuario(UsuarioCreateDTO dto)
         {
