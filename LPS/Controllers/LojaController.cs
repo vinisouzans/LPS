@@ -42,7 +42,7 @@ namespace LPS.Controllers
         }
 
         // POST api/loja
-        [Authorize(Roles = "Administrador")]
+        //[Authorize(Roles = "Administrador")]
         [HttpPost]
         public async Task<ActionResult<LojaReadDTO>> CreateLoja(LojaCreateDTO dto)
         {

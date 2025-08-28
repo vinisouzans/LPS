@@ -14,13 +14,13 @@ namespace LPS.Controllers
             _dashboardService = dashboardService;
         }
 
-        [HttpGet("resumo")]
-        public async Task<IActionResult> GetResumoVendas(
-            [FromQuery] DateTime? dataInicio,
-            [FromQuery] DateTime? dataFim)
-        {
-            var resumo = await _dashboardService.ObterResumoVendasAsync(dataInicio, dataFim);
-            return Ok(resumo);
-        }
+        //[HttpGet("resumo")]
+        //public async Task<IActionResult> GetResumoVendas(
+        //    [FromQuery] DateTime? dataInicio,
+        //    [FromQuery] DateTime? dataFim)
+        //{
+        //    var resumo = await _dashboardService.ObterResumoVendasAsync(dataInicio, dataFim);
+        //    return Ok(resumo);
+        //}
     }
 }

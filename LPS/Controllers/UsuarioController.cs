@@ -29,6 +29,11 @@ namespace LPS.Controllers
                 .Include(u => u.Loja)
                 .ToListAsync();
 
+            if (!usuarios.Any())
+            {
+                return NoContent();
+            }
+
             return Ok(_mapper.Map<IEnumerable<UsuarioReadDTO>>(usuarios));
         }
 

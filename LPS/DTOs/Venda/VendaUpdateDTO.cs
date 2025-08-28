@@ -3,11 +3,16 @@
     public class VendaUpdateDTO
     {
         public DateTime DataVenda { get; set; }
-        public decimal Quantidade { get; set; }
-        public decimal ValorUnitario { get; set; }
-        public int ProdutoId { get; set; }
-        public int EstoqueId { get; set; }
+        public string? ClienteCPF { get; set; }
 
-        public string? ClienteCPF { get; set; } // Cliente pelo CPF, opcional
+        public List<ItemVendaUpdateDTO> Itens { get; set; } = new List<ItemVendaUpdateDTO>();
+    }
+
+    public class ItemVendaUpdateDTO
+    {
+        public int Id { get; set; }
+        public int ProdutoId { get; set; }
+        public int Quantidade { get; set; }
+        public decimal PrecoUnitario { get; set; }
     }
 }

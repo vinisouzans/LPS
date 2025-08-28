@@ -21,6 +21,7 @@ namespace LPS.Data
 
         public DbSet<Desconto> Descontos { get; set; }
 
+        public DbSet<ItemVenda> ItensVenda { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -48,20 +49,6 @@ namespace LPS.Data
                 .HasForeignKey(e => e.FornecedorId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Venda → Produto
-            modelBuilder.Entity<Venda>()
-                .HasOne(v => v.Produto)
-                .WithMany()
-                .HasForeignKey(v => v.ProdutoId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            // Venda → Estoque
-            modelBuilder.Entity<Venda>()
-                .HasOne(v => v.Estoque)
-                .WithMany()
-                .HasForeignKey(v => v.EstoqueId)
-                .OnDelete(DeleteBehavior.Restrict);
-
             modelBuilder.Entity<Usuario>()
                 .HasIndex(u => u.UserName)
                 .IsUnique();
@@ -69,8 +56,22 @@ namespace LPS.Data
             modelBuilder.Entity<Usuario>()
                 .HasIndex(u => u.CPF)
                 .IsUnique();
-        }
 
+            // Venda → ItensVenda (One-to-Many)
+            modelBuilder.Entity<Venda>()
+                .HasMany(v => v.Itens)
+                .WithOne(i => i.Venda)
+                .HasForeignKey(i => i.VendaId)
+                .OnDelete(DeleteBehavior.Cascade); // Se deletar venda, deleta itens
+
+            // ItemVenda → Produto
+            modelBuilder.Entity<ItemVenda>()
+                .HasOne(i => i.Produto)
+                .WithMany()
+                .HasForeignKey(i => i.ProdutoId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+        }
 
     }
 }

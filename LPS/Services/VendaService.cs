@@ -1,24 +1,27 @@
-﻿using LPS.Data;
+﻿using AutoMapper;
+using LPS.Data;
+using LPS.DTOs.Venda;
 using LPS.Models;
 using Microsoft.EntityFrameworkCore;
-using LPS.DTOs.Venda;
 
 namespace LPS.Services
 {
     public class VendaService
     {
-        private readonly AppDbContext _context;
+        private readonly AppDbContext _context;  
+        private readonly IMapper _mapper;
 
-        public VendaService(AppDbContext context)
+        public VendaService(AppDbContext context, IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
 
         public async Task<List<Venda>> ListarVendasAsync()
         {
             return await _context.Vendas
-                .Include(v => v.Estoque)
-                .Include(v => v.Produto)
+                .Include(v => v.Itens)
+                    .ThenInclude(i => i.Produto)
                 .Include(v => v.Cliente)
                 .ToListAsync();
         }
@@ -26,173 +29,178 @@ namespace LPS.Services
         public async Task<Venda?> ObterVendaPorIdAsync(int id)
         {
             return await _context.Vendas
-                .Include(v => v.Produto)
-                .Include(v => v.Estoque)
+                .Include(v => v.Itens)
+                    .ThenInclude(i => i.Produto)
+                .Include(v => v.Cliente)
                 .FirstOrDefaultAsync(v => v.Id == id);
         }
 
         public async Task<Venda> CriarVendaAsync(VendaCreateDTO dto)
         {
-            // Buscar cliente pelo CPF (opcional, mas necessário para validar desconto geral)
-            Cliente? cliente = null;
-            if (!string.IsNullOrEmpty(dto.ClienteCPF))
+            using var transaction = await _context.Database.BeginTransactionAsync();
+
+            try
             {
-                cliente = await _context.Clientes.FirstOrDefaultAsync(c => c.CPF == dto.ClienteCPF);
-                if (cliente == null)
-                    throw new Exception("Cliente não encontrado para o CPF informado.");
-            }
-
-            var estoque = await _context.Estoques.FirstOrDefaultAsync(e => e.Id == dto.EstoqueId);
-            if (estoque == null)
-                throw new Exception("Estoque não encontrado");
-
-            if (estoque.Quantidade < dto.Quantidade)
-                throw new Exception("Quantidade insuficiente no estoque");
-
-            // Desconta do estoque
-            estoque.Quantidade -= dto.Quantidade;
-
-            // Valor bruto da venda
-            decimal valorTotal = dto.Quantidade * dto.ValorUnitario;
-
-            // Buscar descontos ativos para a data da venda
-            var hoje = dto.DataVenda.Date;
-            var descontosAtivos = await _context.Descontos
-                .Where(d => d.DataInicio <= hoje && d.DataFim >= hoje)
-                .ToListAsync();
-
-            decimal descontoAplicado = 0m;
-
-            foreach (var desconto in descontosAtivos)
-            {
-                if (desconto.ProdutoId.HasValue && desconto.ProdutoId.Value == dto.ProdutoId)
+                // 1. Validar e buscar cliente se CPF foi fornecido
+                int? clienteId = null;
+                Cliente? cliente = null;
+                if (!string.IsNullOrEmpty(dto.ClienteCPF))
                 {
-                    // Desconto específico do produto
-                    descontoAplicado = Math.Max(descontoAplicado, desconto.Percentual);
+                    cliente = await _context.Clientes
+                        .FirstOrDefaultAsync(c => c.CPF == dto.ClienteCPF);
+
+                    if (cliente == null)
+                    {
+                        throw new Exception($"Cliente com CPF {dto.ClienteCPF} não encontrado");
+                    }
+                    clienteId = cliente.Id;
                 }
-                else if (!desconto.ProdutoId.HasValue && cliente != null)
+
+                // 2. Validar estoques antes de criar a venda
+                foreach (var itemDto in dto.Itens)
                 {
-                    // Desconto geral aplicado a qualquer venda com cliente
-                    descontoAplicado = Math.Max(descontoAplicado, desconto.Percentual);
+                    var estoque = await _context.Estoques
+                        .FirstOrDefaultAsync(e => e.ProdutoId == itemDto.ProdutoId);
+
+                    if (estoque == null)
+                    {
+                        throw new Exception($"Estoque não encontrado para o produto ID {itemDto.ProdutoId}");
+                    }
+
+                    if (estoque.Quantidade < itemDto.Quantidade)
+                    {
+                        throw new Exception($"Quantidade insuficiente no estoque para o produto ID {itemDto.ProdutoId}");
+                    }
                 }
+
+                // 3. Criar a venda
+                var venda = new Venda
+                {
+                    DataVenda = dto.DataVenda,
+                    ClienteId = clienteId,
+                    Itens = new List<ItemVenda>()
+                };
+
+                // 4. Adicionar itens, aplicar descontos e calcular subtotal
+                decimal valorTotal = 0;
+                var hoje = DateTime.UtcNow.Date;
+
+                foreach (var itemDto in dto.Itens)
+                {
+                    var produto = await _context.Produtos.FindAsync(itemDto.ProdutoId);
+                    if (produto == null)
+                    {
+                        throw new Exception($"Produto ID {itemDto.ProdutoId} não encontrado");
+                    }
+
+                    // Calcular subtotal sem desconto
+                    decimal subtotal = itemDto.Quantidade * itemDto.PrecoUnitario;
+                    decimal descontoAplicado = 0;
+
+                    // Aplicar descontos específicos do produto (prioridade máxima)
+                    var descontosProduto = await _context.Descontos
+                        .Where(d => d.DataInicio <= hoje && d.DataFim >= hoje &&
+                                   d.ProdutoId == itemDto.ProdutoId)
+                        .ToListAsync();
+
+                    foreach (var desconto in descontosProduto)
+                    {
+                        descontoAplicado = Math.Max(descontoAplicado, desconto.Percentual);
+                    }
+
+                    // Aplicar desconto geral (se não houver desconto específico e se houver cliente)
+                    if (descontoAplicado == 0 && clienteId.HasValue)
+                    {
+                        var descontosGerais = await _context.Descontos
+                            .Where(d => d.DataInicio <= hoje && d.DataFim >= hoje &&
+                                       !d.ProdutoId.HasValue) // Descontos gerais (sem produto específico)
+                            .ToListAsync();
+
+                        foreach (var desconto in descontosGerais)
+                        {
+                            descontoAplicado = Math.Max(descontoAplicado, desconto.Percentual);
+                        }
+                    }
+
+                    // Calcular subtotal com desconto
+                    decimal subtotalComDesconto = subtotal * (1 - descontoAplicado / 100m);
+
+                    var itemVenda = new ItemVenda
+                    {
+                        ProdutoId = itemDto.ProdutoId,
+                        Quantidade = itemDto.Quantidade,
+                        PrecoUnitario = itemDto.PrecoUnitario,
+                        Subtotal = subtotalComDesconto
+                    };
+
+                    venda.Itens.Add(itemVenda);
+                    valorTotal += subtotalComDesconto;
+
+                    // 5. Atualizar estoque
+                    var estoque = await _context.Estoques
+                        .FirstOrDefaultAsync(e => e.ProdutoId == itemDto.ProdutoId);
+
+                    estoque!.Quantidade -= itemDto.Quantidade;
+                    _context.Estoques.Update(estoque);
+                }
+
+                venda.ValorTotal = valorTotal;
+
+                _context.Vendas.Add(venda);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return venda;
             }
-
-            // Aplicar desconto
-            valorTotal = valorTotal * (1 - descontoAplicado / 100m);
-
-            var venda = new Venda
+            catch
             {
-                DataVenda = dto.DataVenda,
-                Quantidade = dto.Quantidade,
-                ValorUnitario = dto.ValorUnitario,
-                ValorTotal = valorTotal,
-                ProdutoId = dto.ProdutoId,
-                EstoqueId = dto.EstoqueId,
-                ClienteId = cliente?.Id
-            };
-
-            _context.Vendas.Add(venda);
-            await _context.SaveChangesAsync();
-
-            return venda;
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
-
-        public async Task AtualizarVendaAsync(int id, VendaUpdateDTO dto)
-        {
-            var vendaExistente = await _context.Vendas
-                .Include(v => v.Estoque)
-                .FirstOrDefaultAsync(v => v.Id == id);
-
-            if (vendaExistente == null)
-                throw new Exception("Venda não encontrada.");
-
-            var estoque = await _context.Estoques.FindAsync(dto.EstoqueId);
-            if (estoque == null)
-                throw new Exception("Estoque não encontrado.");
-
-            // Repor quantidade antiga no estoque
-            vendaExistente.Estoque.Quantidade += vendaExistente.Quantidade;
-
-            // Verificar se a nova quantidade pode ser descontada
-            if (dto.Quantidade > estoque.Quantidade)
-                throw new Exception("Quantidade insuficiente em estoque.");
-
-            // Atualizar dados básicos
-            vendaExistente.ProdutoId = dto.ProdutoId;
-            vendaExistente.EstoqueId = dto.EstoqueId;
-            vendaExistente.Quantidade = dto.Quantidade;
-            vendaExistente.ValorUnitario = dto.ValorUnitario;
-
-            // Buscar cliente pelo CPF (se informado)
-            Cliente? cliente = null;
-            if (!string.IsNullOrEmpty(dto.ClienteCPF))
-            {
-                cliente = await _context.Clientes.FirstOrDefaultAsync(c => c.CPF == dto.ClienteCPF);
-                if (cliente == null)
-                    throw new Exception("Cliente não encontrado para o CPF informado.");
-                vendaExistente.ClienteId = cliente.Id;
-            }
-            else
-            {
-                vendaExistente.ClienteId = null;
-            }
-
-            // Valor bruto da venda
-            decimal valorTotal = dto.Quantidade * dto.ValorUnitario;
-
-            // Buscar descontos ativos para a data da venda
-            var hoje = vendaExistente.DataVenda.Date;
-            var descontosAtivos = await _context.Descontos
-                .Where(d => d.DataInicio <= hoje && d.DataFim >= hoje)
-                .ToListAsync();
-
-            decimal descontoAplicado = 0m;
-
-            foreach (var desconto in descontosAtivos)
-            {
-                if (desconto.ProdutoId.HasValue && desconto.ProdutoId.Value == dto.ProdutoId)
-                {
-                    // Desconto específico do produto
-                    descontoAplicado = Math.Max(descontoAplicado, desconto.Percentual);
-                }
-                else if (!desconto.ProdutoId.HasValue && cliente != null)
-                {
-                    // Desconto geral aplicado a qualquer venda com cliente
-                    descontoAplicado = Math.Max(descontoAplicado, desconto.Percentual);
-                }
-            }
-
-            // Aplicar desconto
-            vendaExistente.ValorTotal = valorTotal * (1 - descontoAplicado / 100m);
-
-            // Descontar do estoque
-            estoque.Quantidade -= dto.Quantidade;
-
-            await _context.SaveChangesAsync();
-        }
-
 
         public async Task DeletarVendaAsync(int id)
         {
-            var venda = await _context.Vendas
-                .Include(v => v.Estoque)
-                .FirstOrDefaultAsync(v => v.Id == id);
+            using var transaction = await _context.Database.BeginTransactionAsync();
 
-            if (venda == null)
-                throw new Exception("Venda não encontrada.");
+            try
+            {
+                var venda = await _context.Vendas
+                    .Include(v => v.Itens)
+                    .FirstOrDefaultAsync(v => v.Id == id);
 
-            // Devolver quantidade ao estoque
-            venda.Estoque.Quantidade += venda.Quantidade;
+                if (venda == null)
+                    throw new Exception("Venda não encontrada.");
 
-            _context.Vendas.Remove(venda);
-            await _context.SaveChangesAsync();
+                // Devolver quantidade ao estoque para cada item
+                foreach (var item in venda.Itens)
+                {
+                    var estoque = await _context.Estoques
+                        .FirstOrDefaultAsync(e => e.ProdutoId == item.ProdutoId);
+
+                    if (estoque != null)
+                    {
+                        estoque.Quantidade += item.Quantidade;
+                        _context.Estoques.Update(estoque);
+                    }
+                }
+
+                _context.Vendas.Remove(venda);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         public async Task<IEnumerable<Venda>> ObterVendasPorClienteIdAsync(int clienteId)
         {
             return await _context.Vendas
-                .Include(v => v.Produto)
-                .Include(v => v.Estoque)
+                .Include(v => v.Itens)
+                    .ThenInclude(i => i.Produto)
                 .Include(v => v.Cliente)
                 .Where(v => v.ClienteId == clienteId)
                 .ToListAsync();
@@ -201,12 +209,11 @@ namespace LPS.Services
         public async Task<IEnumerable<Venda>> ObterVendasPorClienteCpfAsync(string cpf)
         {
             return await _context.Vendas
-                .Include(v => v.Produto)
-                .Include(v => v.Estoque)
+                .Include(v => v.Itens)
+                    .ThenInclude(i => i.Produto)
                 .Include(v => v.Cliente)
                 .Where(v => v.Cliente != null && v.Cliente.CPF == cpf)
                 .ToListAsync();
         }
-
     }
 }

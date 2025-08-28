@@ -19,6 +19,12 @@ namespace LPS.Controllers
         public async Task<IActionResult> GetClientes()
         {
             var clientes = await _clienteService.ListarClientesAsync();
+
+            if (clientes == null || !clientes.Any())
+            {
+                return NoContent();
+            }
+
             return Ok(clientes);
         }
 

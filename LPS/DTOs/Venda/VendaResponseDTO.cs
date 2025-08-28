@@ -1,22 +1,20 @@
 ﻿namespace LPS.DTOs.Venda
-{
-    public class VendaDTO
+{    
+    public class VendaResponseDTO
     {
         public int Id { get; set; }
         public DateTime DataVenda { get; set; }
         public decimal ValorTotal { get; set; }
-
         public string? ClienteNome { get; set; }
         public string? ClienteCPF { get; set; }
-
-        public List<VendaItemDTO> Itens { get; set; } = new List<VendaItemDTO>();
+        public List<ItemVendaResponseDTO> Itens { get; set; } = new();
     }
 
-    public class VendaItemDTO
+    public class ItemVendaResponseDTO
     {
         public int Id { get; set; }
-        public decimal Quantidade { get; set; }
-        public decimal ValorUnitario { get; set; }
+        public int Quantidade { get; set; }
+        public decimal PrecoUnitario { get; set; }
         public decimal Subtotal { get; set; }
         public int ProdutoId { get; set; }
         public string? ProdutoNome { get; set; }
